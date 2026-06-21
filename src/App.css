@@ -96,6 +96,11 @@ h1 {
   color: #0f76d5;
 }
 
+.timer-count strong,
+.best-count strong {
+  font-variant-numeric: tabular-nums;
+}
+
 .reset-button {
   border: none;
   border-radius: 999px;
@@ -117,6 +122,67 @@ h1 {
   font-weight: 900;
   text-align: center;
   letter-spacing: 0.08em;
+}
+
+.ranking-panel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border-radius: 18px;
+  background: rgba(239, 248, 255, 0.84);
+  border: 1px solid rgba(73, 113, 155, 0.14);
+  overflow: hidden;
+}
+
+.ranking-panel h2 {
+  margin: 0;
+  color: #49719b;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.ranking-empty {
+  margin: 0;
+  color: #5f7ea4;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.ranking-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+}
+
+.ranking-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #3e6288;
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.ranking-list li.is-latest {
+  color: #185d37;
+  background: #dff8e9;
+  outline: 2px solid rgba(47, 142, 81, 0.18);
+}
+
+.ranking-list strong {
+  color: #183153;
+  font-variant-numeric: tabular-nums;
 }
 
 .play-area {
@@ -311,6 +377,22 @@ h1 {
 
   .status-panel {
     justify-content: space-between;
+  }
+
+  .status-count {
+    padding: 9px 12px;
+    font-size: 0.92rem;
+  }
+
+  .status-count strong {
+    font-size: 1.08rem;
+  }
+
+  .ranking-panel {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+    padding: 7px 10px;
   }
 
   .tray-header {

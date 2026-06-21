@@ -8,6 +8,7 @@ import { SNAP_DISTANCE, type Piece } from "../data/pieces";
 type PuzzleBoardProps = {
   pieces: Piece[];
   onPiecesChange: (nextPieces: Piece[]) => void;
+  onGameStart: () => void;
 };
 
 type DragState = {
@@ -45,6 +46,7 @@ function clamp(value: number, min: number, max: number) {
 export default function PuzzleBoard({
   pieces,
   onPiecesChange,
+  onGameStart,
 }: PuzzleBoardProps) {
   const mapRef = useRef<SVGSVGElement | null>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
@@ -192,6 +194,8 @@ export default function PuzzleBoard({
     if (!trayPoint || !mapPoint) {
       return;
     }
+
+    onGameStart();
 
     setDragState({
       id: piece.id,
