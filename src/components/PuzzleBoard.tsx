@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import type { PointerEvent as ReactPointerEvent } from "react";
+import type {
+  PointerEvent as ReactPointerEvent,
+  TouchEvent as ReactTouchEvent,
+} from "react";
 import { SNAP_DISTANCE, type Piece } from "../data/pieces";
 
 type PuzzleBoardProps = {
@@ -9,7 +12,7 @@ type PuzzleBoardProps = {
 
 type DragState = {
   id: string;
-  pointerId: number;
+  pointerId: number | null;
   anchorX: number;
   anchorY: number;
   mapX: number;
@@ -51,17 +54,13 @@ export default function PuzzleBoard({
       return;
     }
 
-    const handlePointerMove = (event: PointerEvent) => {
-      if (event.pointerId !== dragState.pointerId) {
-        return;
-      }
-
+    const updateDragPosition = (clientX: number, clientY: number) => {
       const svg = mapRef.current;
       if (!svg) {
         return;
       }
 
-      const point = getSvgPoint(svg, event.clientX, event.clientY);
+      const point = getSvgPoint(svg, clientX, clientY);
       if (!point) {
         return;
       }
@@ -77,11 +76,7 @@ export default function PuzzleBoard({
       );
     };
 
-    const handlePointerUp = (event: PointerEvent) => {
-      if (event.pointerId !== dragState.pointerId) {
-        return;
-      }
-
+    const finishDrag = (clientX: number, clientY: number) => {
       const piece = pieces.find((candidate) => candidate.id === dragState.id);
       const svg = mapRef.current;
 
@@ -90,7 +85,7 @@ export default function PuzzleBoard({
         return;
       }
 
-      const dropPoint = getSvgPoint(svg, event.clientX, event.clientY);
+      const dropPoint = getSvgPoint(svg, clientX, clientY);
       if (!dropPoint) {
         setDragState(null);
         return;
@@ -120,42 +115,126 @@ export default function PuzzleBoard({
       setDragState(null);
     };
 
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerId !== dragState.pointerId) {
+        return;
+      }
+
+      updateDragPosition(event.clientX, event.clientY);
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      if (event.pointerId !== dragState.pointerId) {
+        return;
+      }
+
+      finishDrag(event.clientX, event.clientY);
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      if (dragState.pointerId !== null) {
+        return;
+      }
+
+      const touch = event.touches[0];
+      if (!touch) {
+        return;
+      }
+
+      event.preventDefault();
+      updateDragPosition(touch.clientX, touch.clientY);
+    };
+
+    const handleTouchEnd = (event: TouchEvent) => {
+      if (dragState.pointerId !== null) {
+        return;
+      }
+
+      const touch = event.changedTouches[0];
+      if (!touch) {
+        setDragState(null);
+        return;
+      }
+
+      event.preventDefault();
+      finishDrag(touch.clientX, touch.clientY);
+    };
+
     window.addEventListener("pointermove", handlePointerMove);
     window.addEventListener("pointerup", handlePointerUp);
     window.addEventListener("pointercancel", handlePointerUp);
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("touchend", handleTouchEnd, { passive: false });
+    window.addEventListener("touchcancel", handleTouchEnd, { passive: false });
 
     return () => {
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerUp);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+      window.removeEventListener("touchcancel", handleTouchEnd);
     };
   }, [dragState, onPiecesChange, pieces]);
 
+  const startDrag = (
+    piece: Piece,
+    traySvg: SVGSVGElement,
+    clientX: number,
+    clientY: number,
+    pointerId: number | null,
+  ) => {
+    const trayPoint = getSvgPoint(traySvg, clientX, clientY);
+    const mapPoint = mapRef.current
+      ? getSvgPoint(mapRef.current, clientX, clientY)
+      : null;
+
+    if (!trayPoint || !mapPoint) {
+      return;
+    }
+
+    setDragState({
+      id: piece.id,
+      pointerId,
+      anchorX: clamp(trayPoint.x, 0, piece.width),
+      anchorY: clamp(trayPoint.y, 0, piece.height),
+      mapX: mapPoint.x,
+      mapY: mapPoint.y,
+    });
+  };
+
   const handleTrayPointerDown =
     (piece: Piece) => (event: ReactPointerEvent<SVGSVGElement>) => {
-      event.preventDefault();
-
-      const trayPoint = getSvgPoint(
-        event.currentTarget,
-        event.clientX,
-        event.clientY,
-      );
-      const mapPoint = mapRef.current
-        ? getSvgPoint(mapRef.current, event.clientX, event.clientY)
-        : null;
-
-      if (!trayPoint || !mapPoint) {
+      if (event.pointerType === "touch") {
         return;
       }
 
-      setDragState({
-        id: piece.id,
-        pointerId: event.pointerId,
-        anchorX: clamp(trayPoint.x, 0, piece.width),
-        anchorY: clamp(trayPoint.y, 0, piece.height),
-        mapX: mapPoint.x,
-        mapY: mapPoint.y,
-      });
+      event.preventDefault();
+      event.currentTarget.setPointerCapture(event.pointerId);
+      startDrag(
+        piece,
+        event.currentTarget,
+        event.clientX,
+        event.clientY,
+        event.pointerId,
+      );
+    };
+
+  const handleTrayTouchStart =
+    (piece: Piece) => (event: ReactTouchEvent<SVGSVGElement>) => {
+      const touch = event.touches[0];
+      if (!touch) {
+        return;
+      }
+
+      event.preventDefault();
+      startDrag(
+        piece,
+        event.currentTarget,
+        touch.clientX,
+        touch.clientY,
+        null,
+      );
     };
 
   const draggingPiece = dragState
@@ -232,6 +311,7 @@ export default function PuzzleBoard({
                     className="tray-piece-svg"
                     viewBox={`0 0 ${piece.width} ${piece.height}`}
                     onPointerDown={handleTrayPointerDown(piece)}
+                    onTouchStart={handleTrayTouchStart(piece)}
                   >
                     <g className="piece-group">
                       <path d={piece.path} className="piece-shape" />
