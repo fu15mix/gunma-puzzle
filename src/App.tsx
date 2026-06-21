@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import PuzzleBoard from "./components/PuzzleBoard";
-import { initialPieces, type Piece } from "./data/pieces";
+import type { Piece } from "./data/pieces";
+import { puzzles } from "./data/puzzles";
 
 type TimerStatus = "idle" | "running" | "finished";
 
@@ -12,6 +13,7 @@ type RankingEntry = {
 
 const LEADERBOARD_KEY = "gunma-puzzle-leaderboard";
 const MAX_RANKING_COUNT = 5;
+const DEFAULT_PUZZLE = puzzles[0];
 
 function shufflePieces(pieces: Piece[]): Piece[] {
   const nextPieces = [...pieces];
@@ -27,8 +29,8 @@ function shufflePieces(pieces: Piece[]): Piece[] {
   return nextPieces;
 }
 
-function resetPieces(): Piece[] {
-  return shufflePieces(initialPieces.map((piece) => ({ ...piece })));
+function resetPieces(sourcePieces: Piece[]): Piece[] {
+  return shufflePieces(sourcePieces.map((piece) => ({ ...piece })));
 }
 
 function formatElapsed(elapsedMs: number): string {
@@ -40,9 +42,13 @@ function formatElapsed(elapsedMs: number): string {
   return `${minutes}:${String(seconds).padStart(2, "0")}.${tenths}`;
 }
 
-function loadLeaderboard(): RankingEntry[] {
+function leaderboardKey(puzzleId: string): string {
+  return `${LEADERBOARD_KEY}:${puzzleId}`;
+}
+
+function loadLeaderboard(key: string): RankingEntry[] {
   try {
-    const rawEntries = window.localStorage.getItem(LEADERBOARD_KEY);
+    const rawEntries = window.localStorage.getItem(key);
     if (!rawEntries) {
       return [];
     }
@@ -66,9 +72,9 @@ function loadLeaderboard(): RankingEntry[] {
   }
 }
 
-function saveLeaderboard(entries: RankingEntry[]) {
+function saveLeaderboard(key: string, entries: RankingEntry[]) {
   try {
-    window.localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(entries));
+    window.localStorage.setItem(key, JSON.stringify(entries));
   } catch {
     // Private browsing or strict storage settings can block saving scores.
   }
@@ -79,12 +85,18 @@ function createResultId(): string {
 }
 
 export default function App() {
-  const [pieces, setPieces] = useState<Piece[]>(() => resetPieces());
+  const [activePuzzleId, setActivePuzzleId] = useState(DEFAULT_PUZZLE.id);
+  const activePuzzle =
+    puzzles.find((puzzle) => puzzle.id === activePuzzleId) ?? DEFAULT_PUZZLE;
+  const activeLeaderboardKey = leaderboardKey(activePuzzle.id);
+  const [pieces, setPieces] = useState<Piece[]>(() =>
+    resetPieces(DEFAULT_PUZZLE.pieces),
+  );
   const [timerStatus, setTimerStatus] = useState<TimerStatus>("idle");
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [leaderboard, setLeaderboard] = useState<RankingEntry[]>(() =>
-    loadLeaderboard(),
+    loadLeaderboard(leaderboardKey(DEFAULT_PUZZLE.id)),
   );
   const [latestResultId, setLatestResultId] = useState<string | null>(null);
 
@@ -97,6 +109,15 @@ export default function App() {
     [pieces],
   );
   const bestTime = leaderboard[0]?.elapsedMs ?? null;
+
+  useEffect(() => {
+    setPieces(resetPieces(activePuzzle.pieces));
+    setTimerStatus("idle");
+    setStartedAt(null);
+    setElapsedMs(0);
+    setLatestResultId(null);
+    setLeaderboard(loadLeaderboard(activeLeaderboardKey));
+  }, [activeLeaderboardKey, activePuzzle.pieces]);
 
   useEffect(() => {
     if (timerStatus !== "running" || startedAt === null) {
@@ -129,8 +150,8 @@ export default function App() {
     setTimerStatus("finished");
     setLatestResultId(result.id);
     setLeaderboard(nextLeaderboard);
-    saveLeaderboard(nextLeaderboard);
-  }, [isCleared, leaderboard, startedAt, timerStatus]);
+    saveLeaderboard(activeLeaderboardKey, nextLeaderboard);
+  }, [activeLeaderboardKey, isCleared, leaderboard, startedAt, timerStatus]);
 
   const handleGameStart = () => {
     if (timerStatus !== "idle") {
@@ -144,7 +165,7 @@ export default function App() {
   };
 
   const handleReset = () => {
-    setPieces(resetPieces());
+    setPieces(resetPieces(activePuzzle.pieces));
     setTimerStatus("idle");
     setStartedAt(null);
     setElapsedMs(0);
@@ -156,8 +177,23 @@ export default function App() {
       <section className="app-card">
         <header className="app-header">
           <div>
-            <p className="eyebrow">こどもとあそべる Web パズル</p>
-            <h1>ぐんま市町村パズル</h1>
+            <p className="eyebrow">{activePuzzle.eyebrow}</p>
+            <h1>{activePuzzle.title}</h1>
+            <div className="mode-switcher" aria-label="パズル切り替え">
+              {puzzles.map((puzzle) => (
+                <button
+                  key={puzzle.id}
+                  type="button"
+                  className={puzzle.id === activePuzzle.id ? "is-active" : ""}
+                  onClick={() => setActivePuzzleId(puzzle.id)}
+                >
+                  {puzzle.modeLabel}
+                </button>
+              ))}
+            </div>
+            {activePuzzle.note ? (
+              <p className="mode-note">{activePuzzle.note}</p>
+            ) : null}
           </div>
 
           <div className="status-panel">
@@ -212,6 +248,7 @@ export default function App() {
           pieces={pieces}
           onPiecesChange={setPieces}
           onGameStart={handleGameStart}
+          snapDistance={activePuzzle.snapDistance}
         />
       </section>
     </main>

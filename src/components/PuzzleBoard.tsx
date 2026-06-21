@@ -3,12 +3,13 @@ import type {
   PointerEvent as ReactPointerEvent,
   TouchEvent as ReactTouchEvent,
 } from "react";
-import { SNAP_DISTANCE, type Piece } from "../data/pieces";
+import type { Piece } from "../data/pieces";
 
 type PuzzleBoardProps = {
   pieces: Piece[];
   onPiecesChange: (nextPieces: Piece[]) => void;
   onGameStart: () => void;
+  snapDistance: number;
 };
 
 type DragState = {
@@ -47,6 +48,7 @@ export default function PuzzleBoard({
   pieces,
   onPiecesChange,
   onGameStart,
+  snapDistance,
 }: PuzzleBoardProps) {
   const mapRef = useRef<SVGSVGElement | null>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
@@ -99,7 +101,7 @@ export default function PuzzleBoard({
         (dropX - piece.correctX) ** 2 + (dropY - piece.correctY) ** 2,
       );
 
-      if (distance <= SNAP_DISTANCE) {
+      if (distance <= snapDistance) {
         onPiecesChange(
           pieces.map((candidate) =>
             candidate.id === piece.id
