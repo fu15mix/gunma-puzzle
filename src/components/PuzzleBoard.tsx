@@ -16,8 +16,10 @@ type DragState = {
   mapY: number;
 };
 
-const VIEWBOX_WIDTH = 800;
-const VIEWBOX_HEIGHT = 620;
+const VIEWBOX_X = 45;
+const VIEWBOX_Y = 8;
+const VIEWBOX_WIDTH = 710;
+const VIEWBOX_HEIGHT = 584;
 
 function getSvgPoint(svg: SVGSVGElement, clientX: number, clientY: number) {
   const ctm = svg.getScreenCTM();
@@ -168,15 +170,15 @@ export default function PuzzleBoard({
         <svg
           ref={mapRef}
           className="puzzle-board"
-          viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+          viewBox={`${VIEWBOX_X} ${VIEWBOX_Y} ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
           role="img"
           aria-label="群馬県市町村パズル"
         >
           <rect
-            x="18"
-            y="18"
-            width="764"
-            height="584"
+            x="48"
+            y="12"
+            width="704"
+            height="576"
             rx="28"
             className="board-surface"
           />
