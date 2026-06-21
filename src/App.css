@@ -99,13 +99,6 @@ h1 {
   color: #0f76d5;
 }
 
-.mode-note {
-  margin: 8px 0 0;
-  color: #6f7f90;
-  font-size: 0.82rem;
-  font-weight: 800;
-}
-
 .status-panel {
   display: flex;
   align-items: center;
@@ -235,6 +228,23 @@ h1 {
   border-radius: 28px;
   border: 1px solid rgba(24, 49, 83, 0.08);
   background: linear-gradient(180deg, #fffdf6 0%, #f3fbff 100%);
+}
+
+.map-note {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 1;
+  max-width: min(420px, calc(100% - 32px));
+  margin: 0;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #5f7ea4;
+  font-size: 0.78rem;
+  font-weight: 900;
+  box-shadow: 0 6px 18px rgba(24, 49, 83, 0.08);
+  pointer-events: none;
 }
 
 .puzzle-board {

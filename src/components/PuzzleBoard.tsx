@@ -10,6 +10,7 @@ type PuzzleBoardProps = {
   onPiecesChange: (nextPieces: Piece[]) => void;
   onGameStart: () => void;
   snapDistance: number;
+  note?: string;
 };
 
 type DragState = {
@@ -49,6 +50,7 @@ export default function PuzzleBoard({
   onPiecesChange,
   onGameStart,
   snapDistance,
+  note,
 }: PuzzleBoardProps) {
   const mapRef = useRef<SVGSVGElement | null>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
@@ -252,6 +254,7 @@ export default function PuzzleBoard({
   return (
     <div className="play-area">
       <div className="map-frame">
+        {note ? <p className="map-note">{note}</p> : null}
         <svg
           ref={mapRef}
           className="puzzle-board"

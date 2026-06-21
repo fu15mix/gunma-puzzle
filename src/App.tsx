@@ -191,9 +191,6 @@ export default function App() {
                 </button>
               ))}
             </div>
-            {activePuzzle.note ? (
-              <p className="mode-note">{activePuzzle.note}</p>
-            ) : null}
           </div>
 
           <div className="status-panel">
@@ -249,6 +246,7 @@ export default function App() {
           onPiecesChange={setPieces}
           onGameStart={handleGameStart}
           snapDistance={activePuzzle.snapDistance}
+          note={activePuzzle.note}
         />
       </section>
     </main>
