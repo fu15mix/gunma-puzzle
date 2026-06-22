@@ -328,7 +328,9 @@ export default function PuzzleBoard({
                   </svg>
                 </span>
                 <span className="tray-piece-text">
-                  <span className="tray-piece-reading">{piece.reading}</span>
+                  {piece.reading && piece.reading !== piece.name ? (
+                    <span className="tray-piece-reading">{piece.reading}</span>
+                  ) : null}
                   <span className="tray-piece-name">{piece.name}</span>
                 </span>
               </button>

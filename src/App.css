@@ -78,27 +78,28 @@ h1 {
 
 .mode-switcher {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
   margin-top: 8px;
 }
 
-.mode-switcher button {
+.mode-switcher label {
+  color: #49719b;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.mode-switcher select {
+  min-width: 210px;
   border: 2px solid rgba(73, 113, 155, 0.2);
   border-radius: 999px;
-  padding: 6px 11px;
+  padding: 6px 34px 6px 12px;
   background: rgba(255, 255, 255, 0.86);
   color: #315c88;
   font: inherit;
   font-size: 0.82rem;
   font-weight: 900;
   cursor: pointer;
-}
-
-.mode-switcher button.is-active {
-  border-color: rgba(15, 118, 213, 0.36);
-  background: #e6f4ff;
-  color: #0f76d5;
 }
 
 .status-panel {
@@ -433,9 +434,14 @@ h1 {
     margin-top: 6px;
   }
 
-  .mode-switcher button {
+  .mode-switcher label,
+  .mode-switcher select {
     padding: 5px 8px;
     font-size: 0.76rem;
+  }
+
+  .mode-switcher select {
+    min-width: 180px;
   }
 
   .status-panel {
@@ -523,9 +529,14 @@ h1 {
     margin-top: 5px;
   }
 
-  .mode-switcher button {
+  .mode-switcher label,
+  .mode-switcher select {
     padding: 4px 9px;
     font-size: 0.74rem;
+  }
+
+  .mode-switcher select {
+    min-width: 190px;
   }
 
   .status-panel {

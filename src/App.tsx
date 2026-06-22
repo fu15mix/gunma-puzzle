@@ -180,16 +180,18 @@ export default function App() {
             <p className="eyebrow">{activePuzzle.eyebrow}</p>
             <h1>{activePuzzle.title}</h1>
             <div className="mode-switcher" aria-label="パズル切り替え">
-              {puzzles.map((puzzle) => (
-                <button
-                  key={puzzle.id}
-                  type="button"
-                  className={puzzle.id === activePuzzle.id ? "is-active" : ""}
-                  onClick={() => setActivePuzzleId(puzzle.id)}
-                >
-                  {puzzle.modeLabel}
-                </button>
-              ))}
+              <label htmlFor="puzzle-mode">モード</label>
+              <select
+                id="puzzle-mode"
+                value={activePuzzle.id}
+                onChange={(event) => setActivePuzzleId(event.target.value)}
+              >
+                {puzzles.map((puzzle) => (
+                  <option key={puzzle.id} value={puzzle.id}>
+                    {puzzle.modeLabel}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

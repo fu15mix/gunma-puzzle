@@ -1,3 +1,4 @@
+import { isesakiSchoolTownPuzzles } from "./isesakiSchoolTownPuzzles";
 import { isesakiSchoolPieces } from "./isesakiSchoolPieces";
 import { miyagoTownPieces } from "./miyagoTownPieces";
 import { initialPieces, type Piece } from "./pieces";
@@ -39,4 +40,5 @@ export const puzzles: PuzzleConfig[] = [
     snapDistance: 38,
     note: "町名境界をもとにした宮郷・宮郷第二エリアの町名版です。",
   },
+  ...isesakiSchoolTownPuzzles,
 ];
