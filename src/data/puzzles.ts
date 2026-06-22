@@ -1,4 +1,5 @@
 import { isesakiSchoolPieces } from "./isesakiSchoolPieces";
+import { miyagoTownPieces } from "./miyagoTownPieces";
 import { initialPieces, type Piece } from "./pieces";
 
 export type PuzzleConfig = {
@@ -28,5 +29,14 @@ export const puzzles: PuzzleConfig[] = [
     pieces: isesakiSchoolPieces,
     snapDistance: 34,
     note: "小学校区は町丁境界をもとにした概略版です。",
+  },
+  {
+    id: "miyago-towns",
+    title: "宮郷・宮郷第二 町名パズル",
+    eyebrow: "伊勢崎市 Ver.",
+    modeLabel: "宮郷町名",
+    pieces: miyagoTownPieces,
+    snapDistance: 38,
+    note: "町名境界をもとにした宮郷・宮郷第二エリアの町名版です。",
   },
 ];
