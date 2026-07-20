@@ -324,41 +324,6 @@ export const roadPoisByPuzzleId: Record<string, MapPoi[]> = {
       x: 415.4,
       y: 258.9,
     },
-    {
-      id: "gunma-municipalities-sa-47",
-      kind: "sa",
-      name: "道の駅 あぐりーむ昭和",
-      x: 418.5,
-      y: 252.9,
-    },
-    {
-      id: "gunma-municipalities-sa-48",
-      kind: "sa",
-      name: "道の駅月夜野矢瀬親水公園",
-      x: 372.8,
-      y: 208.7,
-    },
-    {
-      id: "gunma-municipalities-sa-49",
-      kind: "sa",
-      name: "道の駅水上町水紀行館",
-      x: 366.1,
-      y: 173.9,
-    },
-    {
-      id: "gunma-municipalities-sa-50",
-      kind: "sa",
-      name: "道の駅玉村宿",
-      x: 432.1,
-      y: 411.2,
-    },
-    {
-      id: "gunma-municipalities-sa-51",
-      kind: "sa",
-      name: "道の駅藤岡 (ららん藤岡)",
-      x: 420.9,
-      y: 429.8,
-    },
   ],
   "aichi-municipalities": [
     {

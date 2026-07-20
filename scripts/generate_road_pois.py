@@ -34,6 +34,7 @@ OSM_SOURCES = [
 ]
 TARGET = ROOT / "src" / "data" / "roadPois.ts"
 MAX_DISTANCE_FROM_HIGHWAY = 0.008
+EXCLUDED_NAME_PARTS = ("道の駅",)
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 OVERPASS_QUERY_TEMPLATE = """[out:json][timeout:30];
@@ -142,6 +143,9 @@ def load_pois():
             continue
 
         name = display_name(raw_name, kind)
+        if any(excluded in name for excluded in EXCLUDED_NAME_PARTS):
+            continue
+
         key = (kind, name, round(lon, 4), round(lat, 4))
         if key in seen:
             continue
