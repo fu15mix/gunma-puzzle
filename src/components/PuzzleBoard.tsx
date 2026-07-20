@@ -423,54 +423,54 @@ export default function PuzzleBoard({
 
   return (
     <div className="play-area">
+      <div className="map-controls" aria-label="地図表示">
+        <div className="map-control-group">
+          <button
+            type="button"
+            onClick={() => changeViewScale(viewScale - VIEW_SCALE_STEP)}
+            aria-label="地図を縮小"
+          >
+            −
+          </button>
+          <button type="button" onClick={resetView}>
+            全体
+          </button>
+          <button
+            type="button"
+            onClick={() => changeViewScale(viewScale + VIEW_SCALE_STEP)}
+            aria-label="地図を拡大"
+          >
+            ＋
+          </button>
+        </div>
+        <div className="map-control-group">
+          {overlays.length > 0 ? (
+            <button
+              type="button"
+              className={showHighways ? "is-active" : ""}
+              onClick={() => setShowHighways((current) => !current)}
+              aria-pressed={showHighways}
+            >
+              高速道路
+            </button>
+          ) : null}
+          {pois.length > 0 ? (
+            <button
+              type="button"
+              className={showPois ? "is-active" : ""}
+              onClick={() => setShowPois((current) => !current)}
+              aria-pressed={showPois}
+            >
+              IC/SA/PA
+            </button>
+          ) : null}
+        </div>
+      </div>
       <div className="map-frame">
         {note ? <p className="map-note">{note}</p> : null}
         {visibleOverlays.length > 0 || visiblePois.length > 0 ? (
           <p className="map-attribution">道路情報: © OpenStreetMap contributors</p>
         ) : null}
-        <div className="map-controls" aria-label="地図表示">
-          <div className="map-control-group">
-            <button
-              type="button"
-              onClick={() => changeViewScale(viewScale - VIEW_SCALE_STEP)}
-              aria-label="地図を縮小"
-            >
-              −
-            </button>
-            <button type="button" onClick={resetView}>
-              全体
-            </button>
-            <button
-              type="button"
-              onClick={() => changeViewScale(viewScale + VIEW_SCALE_STEP)}
-              aria-label="地図を拡大"
-            >
-              ＋
-            </button>
-          </div>
-          <div className="map-control-group">
-            {overlays.length > 0 ? (
-              <button
-                type="button"
-                className={showHighways ? "is-active" : ""}
-                onClick={() => setShowHighways((current) => !current)}
-                aria-pressed={showHighways}
-              >
-                高速道路
-              </button>
-            ) : null}
-            {pois.length > 0 ? (
-              <button
-                type="button"
-                className={showPois ? "is-active" : ""}
-                onClick={() => setShowPois((current) => !current)}
-                aria-pressed={showPois}
-              >
-                IC/SA/PA
-              </button>
-            ) : null}
-          </div>
-        </div>
         {viewScale > MIN_VIEW_SCALE ? (
           <p className="map-pan-hint">地図をドラッグして移動</p>
         ) : null}
