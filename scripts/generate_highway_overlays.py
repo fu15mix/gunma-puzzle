@@ -31,16 +31,26 @@ from generate_pieces import (
     SOURCE as GUNMA_SOURCE,
 )
 from generate_isesaki_school_town_puzzles import source_candidates
+from generate_aichi_pieces import (
+    BOARD_HEIGHT as AICHI_BOARD_HEIGHT,
+    BOARD_WIDTH as AICHI_BOARD_WIDTH,
+    BOARD_X as AICHI_BOARD_X,
+    BOARD_Y as AICHI_BOARD_Y,
+    MAP_PADDING_SCALE as AICHI_MAP_PADDING_SCALE,
+    SOURCE as AICHI_SOURCE,
+    ensure_source as ensure_aichi_source,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OSM_SOURCE = ROOT / "data-source" / "osm" / "gunma_motorways.json"
+OSM_SOURCE = ROOT / "data-source" / "osm" / "regional_motorways.json"
 TARGET = ROOT / "src" / "data" / "highwayOverlays.ts"
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 OVERPASS_QUERY = """[out:json][timeout:25];
 (
   way["highway"="motorway"](36.0,138.3,37.1,139.8);
+  way["highway"="motorway"](34.45,136.55,35.55,137.9);
 );
 out geom tags;"""
 
@@ -164,6 +174,37 @@ def gunma_context():
     return area_geometry, transform
 
 
+def aichi_context():
+    ensure_aichi_source()
+    with AICHI_SOURCE.open(encoding="utf-8") as file:
+        data = json.load(file)
+
+    geometries = []
+    for feature in data["features"]:
+        if feature["properties"]["N03_004"] == "所属未定地":
+            continue
+        geometries.append(shape(feature["geometry"]))
+
+    area_geometry = unary_union(geometries)
+    min_x, min_y, max_x, max_y = area_geometry.bounds
+    map_scale = min(
+        AICHI_BOARD_WIDTH / (max_x - min_x),
+        AICHI_BOARD_HEIGHT / (max_y - min_y),
+    ) * AICHI_MAP_PADDING_SCALE
+    map_width = (max_x - min_x) * map_scale
+    map_height = (max_y - min_y) * map_scale
+    margin_x = AICHI_BOARD_X + (AICHI_BOARD_WIDTH - map_width) / 2
+    margin_y = AICHI_BOARD_Y + (AICHI_BOARD_HEIGHT - map_height) / 2
+
+    def transform(x: float, y: float):
+        return (
+            margin_x + (x - min_x) * map_scale,
+            margin_y + (max_y - y) * map_scale,
+        )
+
+    return area_geometry, transform
+
+
 def isesaki_features():
     ensure_isesaki_source()
     topology = json.loads(ISESAKI_SOURCE.read_text(encoding="utf-8"))
@@ -276,6 +317,14 @@ def main():
     area_geometry, transform = gunma_context()
     overlays_by_puzzle_id["gunma-municipalities"] = overlays_for_area(
         "gunma-municipalities",
+        area_geometry,
+        transform,
+        highways,
+    )
+
+    area_geometry, transform = aichi_context()
+    overlays_by_puzzle_id["aichi-municipalities"] = overlays_for_area(
+        "aichi-municipalities",
         area_geometry,
         transform,
         highways,

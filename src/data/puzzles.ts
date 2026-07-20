@@ -1,4 +1,5 @@
 import { highwayOverlaysByPuzzleId } from "./highwayOverlays";
+import { aichiPieces } from "./aichiPieces";
 import { isesakiSchoolTownPuzzles } from "./isesakiSchoolTownPuzzles";
 import { isesakiSchoolPieces } from "./isesakiSchoolPieces";
 import { miyagoTownPieces } from "./miyagoTownPieces";
@@ -29,6 +30,14 @@ const basePuzzles: PuzzleConfig[] = [
     modeLabel: "群馬県市町村",
     pieces: initialPieces,
     snapDistance: 42,
+  },
+  {
+    id: "aichi-municipalities",
+    title: "愛知県市町村パズル",
+    eyebrow: "愛知県 Ver.",
+    modeLabel: "愛知県市町村",
+    pieces: aichiPieces,
+    snapDistance: 38,
   },
   {
     id: "isesaki-schools",
