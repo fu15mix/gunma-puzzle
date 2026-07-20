@@ -287,6 +287,48 @@ h1 {
   pointer-events: none;
 }
 
+.map-poi {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.map-poi circle,
+.map-poi rect,
+.map-poi path {
+  stroke: rgba(255, 255, 255, 0.96);
+  stroke-width: 2;
+  filter: drop-shadow(0 2px 3px rgba(24, 49, 83, 0.22));
+}
+
+.map-poi-ic circle {
+  fill: #1f7ad8;
+}
+
+.map-poi-sa rect {
+  fill: #2e9f67;
+}
+
+.map-poi-pa path {
+  fill: #f59f00;
+}
+
+.map-poi-tooltip {
+  pointer-events: none;
+}
+
+.map-poi-tooltip rect {
+  fill: rgba(255, 255, 255, 0.96);
+  stroke: rgba(31, 122, 216, 0.32);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 4px 8px rgba(24, 49, 83, 0.18));
+}
+
+.map-poi-tooltip text {
+  fill: #183153;
+  font-size: 14px;
+  font-weight: 900;
+}
+
 .tray-panel {
   min-width: 0;
   width: 100%;

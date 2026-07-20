@@ -1,4 +1,5 @@
 import { highwayOverlaysByPuzzleId } from "./highwayOverlays";
+import { roadPoisByPuzzleId } from "./roadPois";
 import { aichiPieces } from "./aichiPieces";
 import { isesakiSchoolTownPuzzles } from "./isesakiSchoolTownPuzzles";
 import { isesakiSchoolPieces } from "./isesakiSchoolPieces";
@@ -11,6 +12,14 @@ export type MapOverlay = {
   path: string;
 };
 
+export type MapPoi = {
+  id: string;
+  kind: "ic" | "sa" | "pa";
+  name: string;
+  x: number;
+  y: number;
+};
+
 export type PuzzleConfig = {
   id: string;
   title: string;
@@ -18,6 +27,7 @@ export type PuzzleConfig = {
   modeLabel: string;
   pieces: Piece[];
   overlays?: MapOverlay[];
+  pois?: MapPoi[];
   snapDistance: number;
   note?: string;
 };
@@ -63,4 +73,5 @@ const basePuzzles: PuzzleConfig[] = [
 export const puzzles: PuzzleConfig[] = basePuzzles.map((puzzle) => ({
   ...puzzle,
   overlays: highwayOverlaysByPuzzleId[puzzle.id] ?? [],
+  pois: roadPoisByPuzzleId[puzzle.id] ?? [],
 }));

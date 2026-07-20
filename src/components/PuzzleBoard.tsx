@@ -3,12 +3,13 @@ import type {
   PointerEvent as ReactPointerEvent,
   TouchEvent as ReactTouchEvent,
 } from "react";
-import type { MapOverlay } from "../data/puzzles";
+import type { MapOverlay, MapPoi } from "../data/puzzles";
 import type { Piece } from "../data/pieces";
 
 type PuzzleBoardProps = {
   pieces: Piece[];
   overlays?: MapOverlay[];
+  pois?: MapPoi[];
   onPiecesChange: (nextPieces: Piece[]) => void;
   onGameStart: () => void;
   snapDistance: number;
@@ -50,6 +51,7 @@ function clamp(value: number, min: number, max: number) {
 export default function PuzzleBoard({
   pieces,
   overlays = [],
+  pois = [],
   onPiecesChange,
   onGameStart,
   snapDistance,
@@ -57,6 +59,11 @@ export default function PuzzleBoard({
 }: PuzzleBoardProps) {
   const mapRef = useRef<SVGSVGElement | null>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
+  const [selectedPoi, setSelectedPoi] = useState<MapPoi | null>(null);
+
+  useEffect(() => {
+    setSelectedPoi(null);
+  }, [pois]);
 
   useEffect(() => {
     if (!dragState) {
@@ -253,13 +260,26 @@ export default function PuzzleBoard({
     : null;
 
   const unplacedPieces = pieces.filter((piece) => !piece.placed);
+  const tooltipWidth = selectedPoi
+    ? Math.max(86, Math.min(220, selectedPoi.name.length * 13 + 24))
+    : 0;
+  const tooltipX = selectedPoi
+    ? clamp(
+        selectedPoi.x + 10,
+        VIEWBOX_X + 12,
+        VIEWBOX_X + VIEWBOX_WIDTH - tooltipWidth - 12,
+      )
+    : 0;
+  const tooltipY = selectedPoi
+    ? clamp(selectedPoi.y - 34, VIEWBOX_Y + 14, VIEWBOX_Y + VIEWBOX_HEIGHT - 34)
+    : 0;
 
   return (
     <div className="play-area">
       <div className="map-frame">
         {note ? <p className="map-note">{note}</p> : null}
-        {overlays.length > 0 ? (
-          <p className="map-attribution">高速道路: © OpenStreetMap contributors</p>
+        {overlays.length > 0 || pois.length > 0 ? (
+          <p className="map-attribution">道路情報: © OpenStreetMap contributors</p>
         ) : null}
         <svg
           ref={mapRef}
@@ -307,6 +327,39 @@ export default function PuzzleBoard({
                 <path d={piece.path} className="piece-shape" />
               </g>
             ))}
+
+          {pois.map((poi) => (
+            <g
+              key={poi.id}
+              className={`map-poi map-poi-${poi.kind}`}
+              transform={`translate(${poi.x} ${poi.y})`}
+              onPointerDown={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setSelectedPoi(poi);
+              }}
+            >
+              {poi.kind === "ic" ? <circle r="4.6" /> : null}
+              {poi.kind === "sa" ? (
+                <rect x="-4.8" y="-4.8" width="9.6" height="9.6" rx="2.2" />
+              ) : null}
+              {poi.kind === "pa" ? (
+                <path d="M0 -5.6 L5.6 4.8 L-5.6 4.8 Z" />
+              ) : null}
+            </g>
+          ))}
+
+          {selectedPoi ? (
+            <g
+              className="map-poi-tooltip"
+              transform={`translate(${tooltipX} ${tooltipY})`}
+            >
+              <rect width={tooltipWidth} height="28" rx="14" />
+              <text x="12" y="19">
+                {selectedPoi.name}
+              </text>
+            </g>
+          ) : null}
 
           {draggingPiece && dragState ? (
             <g
