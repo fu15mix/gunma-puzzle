@@ -3,10 +3,12 @@ import type {
   PointerEvent as ReactPointerEvent,
   TouchEvent as ReactTouchEvent,
 } from "react";
+import type { MapOverlay } from "../data/puzzles";
 import type { Piece } from "../data/pieces";
 
 type PuzzleBoardProps = {
   pieces: Piece[];
+  overlays?: MapOverlay[];
   onPiecesChange: (nextPieces: Piece[]) => void;
   onGameStart: () => void;
   snapDistance: number;
@@ -47,6 +49,7 @@ function clamp(value: number, min: number, max: number) {
 
 export default function PuzzleBoard({
   pieces,
+  overlays = [],
   onPiecesChange,
   onGameStart,
   snapDistance,
@@ -255,6 +258,9 @@ export default function PuzzleBoard({
     <div className="play-area">
       <div className="map-frame">
         {note ? <p className="map-note">{note}</p> : null}
+        {overlays.length > 0 ? (
+          <p className="map-attribution">高速道路: © OpenStreetMap contributors</p>
+        ) : null}
         <svg
           ref={mapRef}
           className="puzzle-board"
@@ -270,6 +276,16 @@ export default function PuzzleBoard({
             rx="28"
             className="board-surface"
           />
+
+          {overlays.map((overlay) => (
+            <path
+              key={overlay.id}
+              d={overlay.path}
+              className="map-overlay-highway"
+            >
+              <title>{overlay.name}</title>
+            </path>
+          ))}
 
           {pieces.map((piece) => (
             <g

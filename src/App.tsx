@@ -245,6 +245,7 @@ export default function App() {
 
         <PuzzleBoard
           pieces={pieces}
+          overlays={activePuzzle.overlays}
           onPiecesChange={setPieces}
           onGameStart={handleGameStart}
           snapDistance={activePuzzle.snapDistance}

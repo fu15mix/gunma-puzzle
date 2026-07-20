@@ -1,7 +1,14 @@
+import { highwayOverlaysByPuzzleId } from "./highwayOverlays";
 import { isesakiSchoolTownPuzzles } from "./isesakiSchoolTownPuzzles";
 import { isesakiSchoolPieces } from "./isesakiSchoolPieces";
 import { miyagoTownPieces } from "./miyagoTownPieces";
 import { initialPieces, type Piece } from "./pieces";
+
+export type MapOverlay = {
+  id: string;
+  name: string;
+  path: string;
+};
 
 export type PuzzleConfig = {
   id: string;
@@ -9,11 +16,12 @@ export type PuzzleConfig = {
   eyebrow: string;
   modeLabel: string;
   pieces: Piece[];
+  overlays?: MapOverlay[];
   snapDistance: number;
   note?: string;
 };
 
-export const puzzles: PuzzleConfig[] = [
+const basePuzzles: PuzzleConfig[] = [
   {
     id: "gunma-municipalities",
     title: "ぐんま市町村パズル",
@@ -42,3 +50,8 @@ export const puzzles: PuzzleConfig[] = [
   },
   ...isesakiSchoolTownPuzzles,
 ];
+
+export const puzzles: PuzzleConfig[] = basePuzzles.map((puzzle) => ({
+  ...puzzle,
+  overlays: highwayOverlaysByPuzzleId[puzzle.id] ?? [],
+}));

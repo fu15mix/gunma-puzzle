@@ -250,6 +250,18 @@ h1 {
   pointer-events: none;
 }
 
+.map-attribution {
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  z-index: 1;
+  margin: 0;
+  color: rgba(95, 126, 164, 0.76);
+  font-size: 0.64rem;
+  font-weight: 800;
+  pointer-events: none;
+}
+
 .puzzle-board {
   display: block;
   width: 100%;
@@ -264,6 +276,15 @@ h1 {
   fill: #ffffff;
   stroke: #d2e4f5;
   stroke-width: 3;
+}
+
+.map-overlay-highway {
+  fill: none;
+  stroke: rgba(72, 130, 89, 0.38);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4;
+  pointer-events: none;
 }
 
 .tray-panel {
