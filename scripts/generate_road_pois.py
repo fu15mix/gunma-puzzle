@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from shapely.geometry import Point
+from shapely.ops import unary_union
 
 from generate_highway_overlays import (
     aichi_context,
@@ -14,6 +15,7 @@ from generate_highway_overlays import (
     gunma_context,
     isesaki_features,
     isesaki_school_context,
+    load_highways,
     miyago_context,
     school_town_contexts,
 )
@@ -31,6 +33,7 @@ OSM_SOURCES = [
     ),
 ]
 TARGET = ROOT / "src" / "data" / "roadPois.ts"
+MAX_DISTANCE_FROM_HIGHWAY = 0.008
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 OVERPASS_QUERY_TEMPLATE = """[out:json][timeout:30];
@@ -156,6 +159,16 @@ def load_pois():
     return pois
 
 
+def filter_pois_near_highways(pois):
+    highway_geometry = unary_union([highway["geometry"] for highway in load_highways()])
+
+    return [
+        poi
+        for poi in pois
+        if poi["point"].distance(highway_geometry) <= MAX_DISTANCE_FROM_HIGHWAY
+    ]
+
+
 def pois_for_area(puzzle_id: str, area_geometry, transform, pois):
     grouped = {}
 
@@ -225,7 +238,7 @@ def write_output(pois_by_puzzle_id):
 
 
 def main():
-    pois = load_pois()
+    pois = filter_pois_near_highways(load_pois())
     pois_by_puzzle_id = {}
 
     area_geometry, transform = gunma_context()

@@ -25,10 +25,31 @@ type DragState = {
   mapY: number;
 };
 
+type ViewCenter = {
+  x: number;
+  y: number;
+};
+
+type PanState = {
+  pointerId: number;
+  startClientX: number;
+  startClientY: number;
+  startCenterX: number;
+  startCenterY: number;
+};
+
 const VIEWBOX_X = 60;
 const VIEWBOX_Y = 18;
 const VIEWBOX_WIDTH = 680;
 const VIEWBOX_HEIGHT = 560;
+const MIN_VIEW_SCALE = 1;
+const DEFAULT_VIEW_SCALE = 1.18;
+const MAX_VIEW_SCALE = 1.9;
+const VIEW_SCALE_STEP = 0.18;
+const DEFAULT_VIEW_CENTER = {
+  x: VIEWBOX_X + VIEWBOX_WIDTH / 2,
+  y: VIEWBOX_Y + VIEWBOX_HEIGHT / 2,
+};
 
 function getSvgPoint(svg: SVGSVGElement, clientX: number, clientY: number) {
   const ctm = svg.getScreenCTM();
@@ -48,6 +69,28 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
+function clampViewCenter(center: ViewCenter, scale: number): ViewCenter {
+  const viewWidth = VIEWBOX_WIDTH / scale;
+  const viewHeight = VIEWBOX_HEIGHT / scale;
+
+  if (scale <= MIN_VIEW_SCALE || viewWidth >= VIEWBOX_WIDTH) {
+    return DEFAULT_VIEW_CENTER;
+  }
+
+  return {
+    x: clamp(
+      center.x,
+      VIEWBOX_X + viewWidth / 2,
+      VIEWBOX_X + VIEWBOX_WIDTH - viewWidth / 2,
+    ),
+    y: clamp(
+      center.y,
+      VIEWBOX_Y + viewHeight / 2,
+      VIEWBOX_Y + VIEWBOX_HEIGHT - viewHeight / 2,
+    ),
+  };
+}
+
 export default function PuzzleBoard({
   pieces,
   overlays = [],
@@ -59,10 +102,17 @@ export default function PuzzleBoard({
 }: PuzzleBoardProps) {
   const mapRef = useRef<SVGSVGElement | null>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
+  const [panState, setPanState] = useState<PanState | null>(null);
+  const [viewScale, setViewScale] = useState(DEFAULT_VIEW_SCALE);
+  const [viewCenter, setViewCenter] =
+    useState<ViewCenter>(DEFAULT_VIEW_CENTER);
   const [selectedPoi, setSelectedPoi] = useState<MapPoi | null>(null);
 
   useEffect(() => {
     setSelectedPoi(null);
+    setPanState(null);
+    setViewScale(DEFAULT_VIEW_SCALE);
+    setViewCenter(DEFAULT_VIEW_CENTER);
   }, [pois]);
 
   useEffect(() => {
@@ -193,6 +243,53 @@ export default function PuzzleBoard({
     };
   }, [dragState, onPiecesChange, pieces]);
 
+  useEffect(() => {
+    if (!panState) {
+      return;
+    }
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerId !== panState.pointerId) {
+        return;
+      }
+
+      const svg = mapRef.current;
+      const rect = svg?.getBoundingClientRect();
+      if (!rect || rect.width === 0 || rect.height === 0) {
+        return;
+      }
+
+      const viewWidth = VIEWBOX_WIDTH / viewScale;
+      const viewHeight = VIEWBOX_HEIGHT / viewScale;
+      const nextCenter = {
+        x:
+          panState.startCenterX -
+          (event.clientX - panState.startClientX) * (viewWidth / rect.width),
+        y:
+          panState.startCenterY -
+          (event.clientY - panState.startClientY) * (viewHeight / rect.height),
+      };
+
+      setViewCenter(clampViewCenter(nextCenter, viewScale));
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      if (event.pointerId === panState.pointerId) {
+        setPanState(null);
+      }
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
+    };
+  }, [panState, viewScale]);
+
   const startDrag = (
     piece: Piece,
     traySvg: SVGSVGElement,
@@ -255,6 +352,34 @@ export default function PuzzleBoard({
       );
     };
 
+  const changeViewScale = (nextScale: number) => {
+    const scale = clamp(nextScale, MIN_VIEW_SCALE, MAX_VIEW_SCALE);
+    setViewScale(scale);
+    setViewCenter((current) => clampViewCenter(current, scale));
+  };
+
+  const resetView = () => {
+    setViewScale(MIN_VIEW_SCALE);
+    setViewCenter(DEFAULT_VIEW_CENTER);
+  };
+
+  const handleMapPointerDown = (event: ReactPointerEvent<SVGSVGElement>) => {
+    if (viewScale <= MIN_VIEW_SCALE || dragState || event.button !== 0) {
+      return;
+    }
+
+    event.preventDefault();
+    setSelectedPoi(null);
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setPanState({
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startCenterX: viewCenter.x,
+      startCenterY: viewCenter.y,
+    });
+  };
+
   const draggingPiece = dragState
     ? pieces.find((piece) => piece.id === dragState.id) ?? null
     : null;
@@ -273,6 +398,18 @@ export default function PuzzleBoard({
   const tooltipY = selectedPoi
     ? clamp(selectedPoi.y - 34, VIEWBOX_Y + 14, VIEWBOX_Y + VIEWBOX_HEIGHT - 34)
     : 0;
+  const viewBoxWidth = VIEWBOX_WIDTH / viewScale;
+  const viewBoxHeight = VIEWBOX_HEIGHT / viewScale;
+  const viewBoxX = clamp(
+    viewCenter.x - viewBoxWidth / 2,
+    VIEWBOX_X,
+    VIEWBOX_X + VIEWBOX_WIDTH - viewBoxWidth,
+  );
+  const viewBoxY = clamp(
+    viewCenter.y - viewBoxHeight / 2,
+    VIEWBOX_Y,
+    VIEWBOX_Y + VIEWBOX_HEIGHT - viewBoxHeight,
+  );
 
   return (
     <div className="play-area">
@@ -281,10 +418,33 @@ export default function PuzzleBoard({
         {overlays.length > 0 || pois.length > 0 ? (
           <p className="map-attribution">道路情報: © OpenStreetMap contributors</p>
         ) : null}
+        <div className="map-controls" aria-label="地図表示">
+          <button
+            type="button"
+            onClick={() => changeViewScale(viewScale - VIEW_SCALE_STEP)}
+            aria-label="地図を縮小"
+          >
+            −
+          </button>
+          <button type="button" onClick={resetView}>
+            全体
+          </button>
+          <button
+            type="button"
+            onClick={() => changeViewScale(viewScale + VIEW_SCALE_STEP)}
+            aria-label="地図を拡大"
+          >
+            ＋
+          </button>
+        </div>
+        {viewScale > MIN_VIEW_SCALE ? (
+          <p className="map-pan-hint">地図をドラッグして移動</p>
+        ) : null}
         <svg
           ref={mapRef}
           className="puzzle-board"
-          viewBox={`${VIEWBOX_X} ${VIEWBOX_Y} ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+          viewBox={`${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}`}
+          onPointerDown={handleMapPointerDown}
           role="img"
           aria-label="群馬県市町村パズル"
         >
