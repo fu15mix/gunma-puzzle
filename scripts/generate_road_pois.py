@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import unicodedata
 from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -34,6 +35,8 @@ OSM_SOURCES = [
 ]
 TARGET = ROOT / "src" / "data" / "roadPois.ts"
 MAX_DISTANCE_FROM_HIGHWAY = 0.008
+NEARBY_POI_MERGE_DISTANCE = 5
+OVERLAPPING_NAME_MERGE_DISTANCE = 14
 EXCLUDED_NAME_PARTS = ("道の駅",)
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
@@ -102,11 +105,84 @@ def poi_name(tags: dict, kind: str):
 
 
 def display_name(name: str, kind: str):
+    normalized = unicodedata.normalize("NFKC", name).strip()
     if kind == "ic":
-        return re.sub(r"(入口|出口)$", "", name)
+        normalized = re.sub(r"(入口|出口)$", "", normalized)
 
-    # Up/down-line service areas are close together on a children's map.
-    return re.sub(r"[（(](上り|下り)[）)]", "", name)
+    # Directional up/down or east/west facilities are close together on a children's map.
+    normalized = re.sub(r"[（(](上り|下り|東行き|西行き)[）)]", "", normalized)
+    normalized = normalized.replace("スマートIC", "スマートIC")
+
+    parts = []
+    for part in re.split(r"\s*[;/／、]\s*", normalized):
+        cleaned = part.strip()
+        if cleaned and cleaned not in parts:
+            parts.append(cleaned)
+
+    return " / ".join(parts)
+
+
+def merge_kind(kinds):
+    if "sa" in kinds:
+        return "sa"
+    if "pa" in kinds:
+        return "pa"
+    return "ic"
+
+
+def merge_name_parts(items):
+    parts = []
+    for item in items:
+        for part in item["name"].split(" / "):
+            if part and part not in parts:
+                parts.append(part)
+
+    return " / ".join(parts)
+
+
+def name_parts_for_cluster(cluster):
+    return {
+        part
+        for item in cluster["items"]
+        for part in item["name"].split(" / ")
+        if part
+    }
+
+
+def merge_cluster(target, source):
+    target["x_total"] += source["x_total"]
+    target["y_total"] += source["y_total"]
+    target["count"] += source["count"]
+    target["x"] = target["x_total"] / target["count"]
+    target["y"] = target["y_total"] / target["count"]
+    target["items"].extend(source["items"])
+
+
+def merge_overlapping_name_clusters(clusters):
+    index = 0
+    while index < len(clusters):
+        current = clusters[index]
+        current_parts = name_parts_for_cluster(current)
+        merged = False
+
+        for other_index in range(index + 1, len(clusters)):
+            other = clusters[other_index]
+            other_parts = name_parts_for_cluster(other)
+            distance = (
+                (current["x"] - other["x"]) ** 2
+                + (current["y"] - other["y"]) ** 2
+            ) ** 0.5
+
+            if distance <= OVERLAPPING_NAME_MERGE_DISTANCE and current_parts & other_parts:
+                merge_cluster(current, other)
+                clusters.pop(other_index)
+                merged = True
+                break
+
+        if not merged:
+            index += 1
+
+    return clusters
 
 
 def ts_string(value: str) -> str:
@@ -174,40 +250,61 @@ def filter_pois_near_highways(pois):
 
 
 def pois_for_area(puzzle_id: str, area_geometry, transform, pois):
-    grouped = {}
+    clusters = []
 
     for poi in pois:
         if not area_geometry.covers(poi["point"]):
             continue
 
         x, y = transform(poi["point"].x, poi["point"].y)
-        key = (poi["kind"], poi["name"])
-        entry = grouped.setdefault(
-            key,
-            {
-                "kind": poi["kind"],
-                "name": poi["name"],
-                "x_total": 0.0,
-                "y_total": 0.0,
-                "count": 0,
-            },
-        )
-        entry["x_total"] += x
-        entry["y_total"] += y
-        entry["count"] += 1
+        matching_cluster = None
 
+        for cluster in clusters:
+            distance = ((x - cluster["x"]) ** 2 + (y - cluster["y"]) ** 2) ** 0.5
+            if distance <= NEARBY_POI_MERGE_DISTANCE:
+                matching_cluster = cluster
+                break
+
+        if matching_cluster is None:
+            clusters.append(
+                {
+                    "x": x,
+                    "y": y,
+                    "x_total": x,
+                    "y_total": y,
+                    "count": 1,
+                    "items": [poi],
+                }
+            )
+            continue
+
+        matching_cluster["x_total"] += x
+        matching_cluster["y_total"] += y
+        matching_cluster["count"] += 1
+        matching_cluster["x"] = matching_cluster["x_total"] / matching_cluster["count"]
+        matching_cluster["y"] = matching_cluster["y_total"] / matching_cluster["count"]
+        matching_cluster["items"].append(poi)
+
+    clusters = merge_overlapping_name_clusters(clusters)
     results = []
-    for index, entry in enumerate(
-        sorted(grouped.values(), key=lambda item: (item["kind"], item["name"])),
+    for index, cluster in enumerate(
+        sorted(
+            clusters,
+            key=lambda item: (
+                merge_kind({poi["kind"] for poi in item["items"]}),
+                merge_name_parts(item["items"]),
+            ),
+        ),
         start=1,
     ):
+        kind = merge_kind({poi["kind"] for poi in cluster["items"]})
         results.append(
             {
-                "id": f"{puzzle_id}-{entry['kind']}-{index}",
-                "kind": entry["kind"],
-                "name": entry["name"],
-                "x": entry["x_total"] / entry["count"],
-                "y": entry["y_total"] / entry["count"],
+                "id": f"{puzzle_id}-{kind}-{index}",
+                "kind": kind,
+                "name": merge_name_parts(cluster["items"]),
+                "x": cluster["x"],
+                "y": cluster["y"],
             }
         )
 
