@@ -1,5 +1,6 @@
 import { highwayOverlaysByPuzzleId } from "./highwayOverlays";
 import { roadPoisByPuzzleId } from "./roadPois";
+import { anjoSchoolPieces } from "./anjoSchoolPieces";
 import { aichiPieces } from "./aichiPieces";
 import { isesakiSchoolTownPuzzles } from "./isesakiSchoolTownPuzzles";
 import { isesakiSchoolPieces } from "./isesakiSchoolPieces";
@@ -48,6 +49,15 @@ const basePuzzles: PuzzleConfig[] = [
     modeLabel: "愛知県市町村",
     pieces: aichiPieces,
     snapDistance: 38,
+  },
+  {
+    id: "anjo-schools",
+    title: "安城市小学校区パズル",
+    eyebrow: "安城市 Ver.",
+    modeLabel: "安城市小学校区",
+    pieces: anjoSchoolPieces,
+    snapDistance: 34,
+    note: "小学校区は町丁・字境界をもとにした概略版です。",
   },
   {
     id: "isesaki-schools",
